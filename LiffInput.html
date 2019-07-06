@@ -7,17 +7,67 @@
     <link href="Style/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body>
-    <div class="row">
-        <div class="col-md-6" style="margin:5px">
-            <label>user id:</label>
-            <input class="form-control" type="text" id="userid" />   <br />
-            <label>QueryString:</label>
-            <input class="form-control" type="text" id="QueryString" /><br />
-            <button class="btn btn-primary" id="ButtonGetProfile">Get Profile</button>
-            <input class="form-control" type="text" id="UserInfo" /><br />
-            <label>要傳送的訊息:</label>
-            <input class="form-control" type="text" id="msg" value="測試" /><br />
-            <button class="btn btn-primary" id="ButtonSendMsg">要傳送的訊息</button>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <label for="userid">User id</label>
+                <input class="form-control" type="text" id="userid" />
+            </div>
+            <div class="col-12">
+                <label for="queryString">QueryString</label>
+                <input class="form-control" type="text" id="queryString" />
+            </div>
+            <div class="col-12">
+                <label for="system">System</label>
+                <select class="custom-select d-block w-100" id="system" required="">
+                    <option value=""></option>
+                    <option>MES</option>
+                    <option>WMS</option>
+                </select>
+                <div class="invalid-feedback">
+                    Please select a valid System.
+                </div>
+            </div>
+            <div class="col-12">
+                <label for="functionGroup">Function Group</label>
+                <select class="custom-select d-block w-100" id="functionGroup" required="">
+                    <option value=""></option>
+                    <option>F001</option>
+                    <option>F002</option>
+                    <option>F003</option>
+                    <option>F004</option>
+                    <option>F005</option>
+                </select>
+                <div class="invalid-feedback">
+                    Please select a valid >Function Group.
+                </div>
+            </div>
+            <div class="col-12">
+                <label for="userInfo">Profile</label>
+            </div>
+            <div class="col-12 ">
+                <div class="row">
+                    <div class="col-10">
+                        <input class="form-control" type="text" id="userInfo" />
+                    </div>
+                    <div class="col-2 ">
+                        <button class="btn btn-primary" id="btnGetProfile">Get Profile</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <label for="msg" class="control-label">要傳送的訊息:</label>
+            </div>
+            <div class="col-12 ">
+                <div class="row">
+                    <div class="col-10">
+                        <input class="form-control" type="text" id="msg" value="" />
+                    </div>
+                    <div class="col-2 ">
+                        <button class="btn btn-primary" id="buttonSendMsg">傳送</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -35,25 +85,52 @@
             //取得QueryString
             let urlParams = new URLSearchParams(window.location.search);
             //顯示QueryString
-            $('#QueryString').val(urlParams.toString());
+            var baseInfoObj = {};
+            var queryString = urlParams.toString();
+            $('#queryString').val(queryString);
+            if (queryString.indexOf('=') != -1) {
+                baseInfoObj[queryString.split('=')[0]] = queryString.split('=')[1];
+            }
             //顯示UserId
             $('#userid').val(data.context.userId);
+
+            return baseInfoObj;
+        }
+
+        function FillMsg(baseInfoObj) {
+            var valueArray = [];
+            $.each(baseInfoObj, function (k, v) {
+                valueArray[valueArray.length] = '"' + k + '"' + ': ' + '"' + v + '"';
+            });
+            $('#msg').val('{' + valueArray.join(',') + '}')
         }
 
         //ready
         $(function () {
+            var baseInfoObj = {};
+
             //init LIFF
             liff.init(function (data) {
-                initializeApp(data);
+                baseInfoObj = initializeApp(data);
+            });
+
+            $('#system').change(function () {
+                baseInfoObj['System'] = $(this).val();
+                FillMsg(baseInfoObj);
+            });
+
+            $('#functionGroup').change(function () {
+                baseInfoObj['FunctionGroup'] = $(this).val();
+                FillMsg(baseInfoObj);
             });
 
             //ButtonGetProfile
-            $('#ButtonGetProfile').click(function () {
+            $('#btnGetProfile').click(function () {
                 //取得User Proile
                 liff.getProfile().then(
                     profile => {
                         //顯示在text box中
-                        $('#UserInfo').val(profile.displayName);
+                        $('#userInfo').val(profile.displayName);
                         //居然可以alert
                         alert('done');
                     }
@@ -61,7 +138,7 @@
             });
 
             //ButtonSendMsg
-            $('#ButtonSendMsg').click(function () {
+            $('#buttonSendMsg').click(function () {
                 liff.sendMessages([
                     {
                         type: 'text',
@@ -71,6 +148,8 @@
                     .then(() => {
                         alert('done');
                     })
+
+                liff.closeWindow();
             });
         });
     </script>
